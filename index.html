@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Board</title>
+    <link rel="stylesheet" href="src/styles/kanban.css">
+    <style>
+        /* Theme Toggle Styles */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--card-bg-color);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle .sun-icon {
+            display: none;
+        }
+
+        .theme-toggle .moon-icon {
+            display: block;
+        }
+
+        [data-theme="dark"] .theme-toggle .sun-icon {
+            display: block;
+        }
+
+        [data-theme="dark"] .theme-toggle .moon-icon {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="kanban-container"></div>
+    
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
+
+    <script type="module">
+        import { Board, Card } from './src/core/index.js';
+
+        // Theme management
+        const themeToggle = document.querySelector('.theme-toggle');
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+
+        themeToggle.addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            
+            // Update board theme if it exists
+            if (board) {
+                board.element.setAttribute('data-theme', currentTheme);
+            }
+        });
+
+        // Initialize board with dark mode aware cards
+        const board = new Board({
+            container: '#kanban-container',
+            theme: currentTheme,
+            title: 'Project Board',
+            enablePreferencesStorage: true,
+  preferences: {
+    cardSize: 'small',
+    compactView: true
+  },
+            search: {
+                enabled: true,
+                placeholder: 'Search by title, tags...',
+                position: 'right',
+                fields: ['title', 'description', 'tags', 'metadata.author'],
+                debounceTime: 500,
+            },
+            swimlanes: [
+                { id: 'frontend', title: 'Frontend Development' },
+                { id: 'backend', title: 'Backend Development' },
+                { id: 'design', title: 'Design & UX' }
+            ],
+            columns: [
+                { 
+                    id: 'todo', 
+                    title: 'To Do', 
+                    wipLimit: 5, 
+                    collapsible: true 
+                },
+                { 
+                    id: 'inProgress', 
+                    title: 'In Progress', 
+                    wipLimit: 3, 
+                    collapsible: true 
+                },
+                { 
+                    id: 'done', 
+                    title: 'Done', 
+                    collapsible: true 
+                }
+            ],
+            filter: {
+                enabled: true,
+                position: 'top-right', // or 'top-left'
+                filters: [
+                {
+                    id: 'high-priority',
+                    label: 'High Priority',
+                    field: 'priority',
+                    operator: 'equals',
+                    value: 'high'
+                },
+                {
+                    id: 'bug-tags',
+                    label: 'Bugs',
+                    field: 'tags',
+                    operator: 'contains',
+                    value: 'bug'
+                },
+                {
+                    id: 'custom-filter',
+                    label: 'Custom Filter',
+                    operator: 'custom',
+                    fn: (card) => {
+                    // Custom filtering logic
+                    console.log(card, 'card');
+                    return card.priority === "medium";
+                    }
+                }
+                ],
+            }
+        });
+
+        // 1. Basic Task Card
+        const basicCard = new Card({
+            id: 'basic1',
+            priority: 'medium',
+            template: {
+                header: `
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h3 style="margin:0">Basic Task</h3>
+                        <span class="k-tag k-tag-light">Simple</span>
+                    </div>
+                `,
+                body: `<p>This is a simple task description</p>`,
+                footer: `
+                    <div class="k-meta">
+                        <div class="k-meta-item k-due-date">🗓️ Today</div>
+                    </div>
+                `
+            }
+        });
+
+        // 2. Progress Card
+        const progressCard = new Card({
+            id: 'progress1',
+            priority: 'high',
+            template: {
+                header: `
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h3 style="margin:0">Progress Task</h3>
+                        <span class="k-tag k-tag-danger">Urgent</span>
+                    </div>
+                `,
+                body: `
+                    <p>Task with progress tracking</p>
+                    <div class="k-progress">
+                        <div class="k-progress-bar k-progress-danger" style="width:75%"></div>
+                    </div>
+                    <div style="text-align:right;font-size:12px;color:var(--text-secondary)">75%</div>
+                `,
+                footer: `
+                    <div class="k-meta">
+                        <span class="k-avatar">AK</span>
+                        <div class="k-due-date overdue">2 days overdue</div>
+                    </div>
+                `
+            }
+        });
+
+        // 3. Checklist Card
+        const checklistCard = new Card({
+            id: 'checklist1',
+            priority: 'medium',
+            template: {
+                header: `
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h3 style="margin:0">Release Checklist</h3>
+                        <div style="display:flex;gap:8px">
+                            <span class="k-tag k-tag-warning">QA</span>
+                            <span class="k-tag k-tag-light">v2.1</span>
+                        </div>
+                    </div>
+                `,
+                body: `
+                    <div class="k-checklist">
+                        <div class="k-checklist-item">
+                            <input type="checkbox" checked> Unit Tests
+                            <span class="k-tag k-tag-success">Done</span>
+                        </div>
+                        <div class="k-checklist-item">
+                            <input type="checkbox" checked> Integration Tests
+                            <span class="k-tag k-tag-success">Done</span>
+                        </div>
+                        <div class="k-checklist-item">
+                            <input type="checkbox"> Performance Tests
+                            <span class="k-tag k-tag-warning">In Progress</span>
+                        </div>
+                        <div class="k-checklist-item">
+                            <input type="checkbox"> Security Audit
+                            <span class="k-tag k-tag-light">Pending</span>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <div class="k-card-actions">
+                        <button class="k-button k-button-light">Details</button>
+                        <button class="k-button k-button-primary">Complete</button>
+                    </div>
+                `
+            }
+        });
+
+        // 4. Team Card
+        const teamCard = new Card({
+            id: 'team1',
+            priority: 'low',
+            template: {
+                header: `
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h3 style="margin:0">Team Meeting</h3>
+                        <span class="k-tag k-tag-primary">Planning</span>
+                    </div>
+                `,
+                body: `
+                    <p>Sprint Planning Meeting</p>
+                    <div class="k-meta" style="margin-top:8px">
+                        <div class="k-meta-item">👥 Attendees:</div>
+                        <div style="display:flex;margin-left:-8px">
+                            <span class="k-avatar" style="margin-left:4px">JD</span>
+                            <span class="k-avatar" style="margin-left:4px">AK</span>
+                            <span class="k-avatar" style="margin-left:4px">MR</span>
+                            <span class="k-avatar" style="margin-left:4px">+2</span>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <div class="k-meta">
+                        <div class="k-meta-item">📍 Room 101</div>
+                        <div class="k-meta-item">⏰ 2:00 PM</div>
+                    </div>
+                `
+            }
+        });
+
+        // 5. Bug Report Card
+        const bugCard = new Card({
+            id: 'bug1',
+            priority: 'high',
+            template: {
+                header: `
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <h3 style="margin:0">🐛 Bug #123</h3>
+                            <span class="k-tag k-tag-danger">Critical</span>
+                        </div>
+                        <span class="k-tag k-tag-light">Frontend</span>
+                    </div>
+                `,
+                body: `
+                    <div style="color:var(--danger-color);font-size:12px;margin-bottom:8px">
+                        Reported by: John Doe • 2 hours ago
+                    </div>
+                    <p>Login page crashes on mobile devices</p>
+                    <div class="k-meta" style="margin-top:8px">
+                        <div class="k-meta-item">
+                            <span class="k-tag k-tag-light">Chrome</span>
+                        </div>
+                        <div class="k-meta-item">
+                            <span class="k-tag k-tag-light">iOS</span>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div class="k-meta">
+                            <div class="k-meta-item">👀 4 watchers</div>
+                        </div>
+                        <div class="k-card-actions">
+                            <button class="k-button k-button-light">Reproduce</button>
+                            <button class="k-button k-button-primary">Fix</button>
+                        </div>
+                    </div>
+                `
+            }
+        });
+
+        // Simple Cards (without templates)
+        const simpleCard = new Card({
+            id: 'simple1',
+            title: 'Update Documentation',
+            description: 'Update the API documentation with new endpoints',
+            priority: 'low'
+        })
+
+        // Add cards to specific swimlane columns
+        // Frontend swimlane
+        board.columns[0].addCard(simpleCard); // Todo column in Frontend
+        board.columns[1].addCard(progressCard); // In Progress column in Frontend
+
+        // Backend swimlane
+        board.columns[3].addCard(basicCard); // Todo column in Backend
+        board.columns[4].addCard(checklistCard); // In Progress column in Backend
+
+        // Design swimlane
+        board.columns[6].addCard(teamCard); // Todo column in Design
+        board.columns[8].addCard(bugCard); // Done column in Design
+    </script>
+</body>
+</html> 

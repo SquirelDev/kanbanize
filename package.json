@@ -1,0 +1,38 @@
+{
+  "name": "kanbanize",
+  "version": "1.0.2",
+  "description": "A JS libary for creating your one kanban based apps",
+  "main": "src/core/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "src/styles",
+    "src/assets"
+  ],
+  "keywords": [
+    "kanban",
+    "board",
+    "drag-and-drop",
+    "ui"
+  ],
+  "author": "SquirelDev",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-typescript": "^8.3.2",
+    "@types/jest": "^28.1.1",
+    "jest": "^28.1.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.75.6",
+    "rollup-plugin-postcss": "^4.0.2",
+    "ts-jest": "^28.0.4",
+    "typescript": "^4.7.3"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "clean": "rimraf dist"
+  }
+}
